@@ -32,3 +32,78 @@ jobs:
             dist/realityfix/SHA256SUMS
           if-no-files-found: error
           retention-days: 30
+publish-public-prerelease:
+    name: Publish public prerelease (Linux amd64)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/fix/reality-fallback-close-v1.14.4'
+    needs: build-linux-amd64
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Download tested binary from this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: sing-box-1.14.4-realityfix.1-linux-amd64
+          path: release-files
+      - name: Verify binary and create self-checking package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-files
+          chmod 755 sing-box
+          sha256sum -c SHA256SUMS
+          ./sing-box version | head -n 4
+          ./sing-box version | grep -Fq 'sing-box version 1.14.4-realityfix.1'
+          ARCHIVE=sing-box-1.14.4-realityfix.1-linux-amd64.tar.gz
+          tar -czf "$ARCHIVE" sing-box SHA256SUMS
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+      - name: Publish GitHub Release (public prerelease)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG=v1.14.4-realityfix.1
+          ARCHIVE=sing-box-1.14.4-realityfix.1-linux-amd64.tar.gz
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists. Not overwriting published binaries."
+            exit 0
+          fi
+          cat > release-notes.md <<'NOTES'
+          Unofficial **testing build**, based on SagerNet/sing-box v1.14.4.
+
+          Implements the minimal REALITY fallback FIN propagation from
+          [MetaCubeX/utls PR #6](https://github.com/MetaCubeX/utls/pull/6)
+          to address [sing-box #4610](https://github.com/SagerNet/sing-box/issues/4610).
+
+          The Linux amd64 binary was compiled with Go 1.26.10 using the
+          pinned metacubex/utls v1.8.7 code plus the reviewed patch.
+          GitHub Actions passed a local fallback EOF regression, TLS and
+          VLESS package tests, and the Linux amd64 binary build.
+
+          **Not yet production-validated.** This propagates a TCP FIN
+          after the fallback target closes, but does not guarantee full
+          resource reclamation if a client ignores FIN, and does not
+          limit connection-rate spikes between A and B.
+
+          Build tags match release/DEFAULT_BUILD_TAGS_OTHERS (no NaiveProxy
+          outbound). Archive includes a standalone sing-box executable
+          and SHA256SUMS for the binary. A separate *.tar.gz.sha256 file
+          verifies the archive itself.
+
+          Before replacing a running sing-box, validate the binary against
+          your actual config and keep a rollback copy.
+          NOTES
+          gh release create "$TAG" \
+            "release-files/$ARCHIVE" \
+            "release-files/$ARCHIVE.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "sing-box v1.14.4-realityfix.1 (unofficial test build)" \
+            --notes-file release-notes.md \
+            --prerelease --latest=false
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --json url,isPrerelease,assets \
+            --jq '{url, isPrerelease, assets: [.assets[].name]}'
+
