@@ -1,5 +1,13 @@
 # sing-box
 
+> **Fork notice / 本 Fork 的修复版本：** [sing-box v1.14.4-realityfix.1](https://github.com/LE-saber/sing-box/releases/tag/v1.14.4-realityfix.1) is a publicly downloadable, unofficial Linux amd64 build with a targeted REALITY fallback FIN fix. It has passed CI and was deployed successfully on a user's VPS (user-confirmed working). **Not an upstream SagerNet release or a long-term stability certification.**
+>
+> **修复已可使用：** [公开下载](https://github.com/LE-saber/sing-box/releases/tag/v1.14.4-realityfix.1) · [中文安装与回滚说明](https://github.com/LE-saber/sing-box/blob/fix/reality-fallback-close-v1.14.4/docs/REALITY_FALLBACK_FIX.zh-CN.md) · [技术说明](https://github.com/LE-saber/sing-box/blob/fix/reality-fallback-close-v1.14.4/docs/REALITY_FALLBACK_FIX.md) · [修复源码分支](https://github.com/LE-saber/sing-box/tree/fix/reality-fallback-close-v1.14.4)。
+>
+> **Important:** This default `testing` branch retains the upstream development code and does **not** include the hotfix. Build from the linked hotfix branch or download its verified public Release binary.
+
+---
+
 The universal proxy platform.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/sing-box.svg)](https://repology.org/project/sing-box/versions)
